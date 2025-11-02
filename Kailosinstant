@@ -1,0 +1,75 @@
+print("Teleport script loaded!")
+
+-- CHANGE THIS TO THE NAME OF YOUR COLLECT ZONE PART!
+local BASE_PART_NAME = "CollectZone" -- <-- Change this to your collect zone's name!
+
+local Players = game:GetService("Players")
+local player = Players.LocalPlayer
+
+-- UI Setup
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "TeleportBrainrotUI"
+pcall(function() ScreenGui.Parent = game:GetService("CoreGui") end)
+if not ScreenGui.Parent then
+    ScreenGui.Parent = player:WaitForChild("PlayerGui")
+end
+
+local button = Instance.new("TextButton")
+button.Name = "TeleportButton"
+button.Size = UDim2.new(0, 180, 0, 48)
+button.Position = UDim2.new(0.05, 0, 0.85, 0) -- left side
+button.BackgroundColor3 = Color3.fromRGB(28, 108, 255)
+button.TextColor3 = Color3.fromRGB(255,255,255)
+button.Text = "INSTANT TELEPORT"
+button.Font = Enum.Font.GothamSemibold
+button.TextScaled = true
+button.BorderSizePixel = 0
+button.Visible = true
+button.Parent = ScreenGui
+
+local uiCorner = Instance.new("UICorner")
+uiCorner.CornerRadius = UDim.new(0, 16)
+uiCorner.Parent = button
+
+-- Check if holding a brainrot
+local function isHoldingBrainrot()
+    local char = player.Character
+    if not char then return false end
+    for _, obj in ipairs(char:GetChildren()) do
+        if obj.Name:lower():find("brainrot") then
+            return true
+        end
+    end
+    return false
+end
+
+-- Teleport function
+local function teleportToBase()
+    local char = player.Character
+    if not char or not char:FindFirstChild("HumanoidRootPart") then return end
+    local base = workspace:FindFirstChild(BASE_PART_NAME)
+    if base and base.Position then
+        char.HumanoidRootPart.CFrame = CFrame.new(base.Position + Vector3.new(0, 4, 0)) -- teleport slightly above
+        print("Teleported to base front!")
+    else
+        print("Base part not found! Change BASE_PART_NAME.")
+        button.Text = "Base not found!"
+        wait(1)
+        button.Text = "INSTANT TELEPORT"
+    end
+end
+
+button.MouseButton1Click:Connect(function()
+    if isHoldingBrainrot() then
+        teleportToBase()
+        button.Text = "Teleported!"
+        wait(0.5)
+        button.Text = "INSTANT TELEPORT"
+    else
+        button.Text = "Hold Brainrot!"
+        wait(0.7)
+        button.Text = "INSTANT TELEPORT"
+    end
+end)
+
+game.StarterGui:SetCore("SendNotification", {Title = "Kailos Teleport", Text = "Loaded! Click INSTANT TELEPORT when holding brainrot.", Duration = 6})
