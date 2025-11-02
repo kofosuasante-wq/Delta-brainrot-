@@ -1,43 +1,86 @@
-print("Teleport script loaded!")
+print("Kailos Ultimate Insta Steal/Teleport loaded!")
 
--- CHANGE THIS TO THE NAME OF YOUR COLLECT ZONE PART!
-local BASE_PART_NAME = "CollectZone" -- <-- Change this to your collect zone's name!
+-- CONFIG: Change this to the name of the part in front of your base/collect zone!
+local BASE_PART_NAME = "CollectZone" -- <--- Change this to match your game's collect zone part name!
 
 local Players = game:GetService("Players")
 local player = Players.LocalPlayer
 
 -- UI Setup
 local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "TeleportBrainrotUI"
+ScreenGui.Name = "KailosBrainrotUI"
+ScreenGui.ResetOnSpawn = false
 pcall(function() ScreenGui.Parent = game:GetService("CoreGui") end)
 if not ScreenGui.Parent then
     ScreenGui.Parent = player:WaitForChild("PlayerGui")
 end
 
+-- Button design
 local button = Instance.new("TextButton")
-button.Name = "TeleportButton"
-button.Size = UDim2.new(0, 180, 0, 48)
-button.Position = UDim2.new(0.05, 0, 0.85, 0) -- left side
-button.BackgroundColor3 = Color3.fromRGB(28, 108, 255)
+button.Name = "InstaStealTeleportButton"
+button.Size = UDim2.new(0, 220, 0, 54)
+button.Position = UDim2.new(0.05, 0, 0.85, 0)
+button.BackgroundColor3 = Color3.fromRGB(0, 200, 255)
 button.TextColor3 = Color3.fromRGB(255,255,255)
-button.Text = "INSTANT TELEPORT"
-button.Font = Enum.Font.GothamSemibold
+button.Text = "⚡ INSTANT STEAL & TELEPORT ⚡"
+button.Font = Enum.Font.FredokaOne
 button.TextScaled = true
 button.BorderSizePixel = 0
+button.AutoButtonColor = true
 button.Visible = true
+button.AnchorPoint = Vector2.new(0, 0)
 button.Parent = ScreenGui
 
-local uiCorner = Instance.new("UICorner")
-uiCorner.CornerRadius = UDim.new(0, 16)
-uiCorner.Parent = button
+-- Rounded corners
+local corner = Instance.new("UICorner")
+corner.CornerRadius = UDim.new(0, 18)
+corner.Parent = button
 
--- Check if holding a brainrot
-local function isHoldingBrainrot()
+-- Drop shadow for style
+local shadow = Instance.new("ImageLabel")
+shadow.Name = "Shadow"
+shadow.Image = "rbxassetid://1316045217"
+shadow.Size = UDim2.new(1, 16, 1, 16)
+shadow.Position = UDim2.new(0, -8, 0, -8)
+shadow.BackgroundTransparency = 1
+shadow.ImageTransparency = 0.7
+shadow.Parent = button
+button.ZIndex = 2
+shadow.ZIndex = 1
+
+-- Make button draggable
+local dragging, dragInput, dragStart, startPos
+button.Active = true
+button.Draggable = true
+button.MouseButton1Down:Connect(function(input)
+    dragging = true
+    dragStart = input.Position
+    startPos = button.Position
+    input.Changed:Connect(function()
+        if input.UserInputState == Enum.UserInputState.End then
+            dragging = false
+        end
+    end)
+end)
+button.MouseMoved:Connect(function(x, y)
+    if dragging then
+        local delta = Vector2.new(x, y) - dragStart
+        button.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+    end
+end)
+
+-- Check if holding ANY brainrot object
+local function hasAnyBrainrot()
     local char = player.Character
     if not char then return false end
     for _, obj in ipairs(char:GetChildren()) do
         if obj.Name:lower():find("brainrot") then
             return true
+        end
+        for _, desc in ipairs(obj:GetDescendants()) do
+            if desc.Name:lower():find("brainrot") then
+                return true
+            end
         end
     end
     return false
@@ -49,27 +92,32 @@ local function teleportToBase()
     if not char or not char:FindFirstChild("HumanoidRootPart") then return end
     local base = workspace:FindFirstChild(BASE_PART_NAME)
     if base and base.Position then
-        char.HumanoidRootPart.CFrame = CFrame.new(base.Position + Vector3.new(0, 4, 0)) -- teleport slightly above
+        char.HumanoidRootPart.CFrame = CFrame.new(base.Position + Vector3.new(0, 4, 0))
         print("Teleported to base front!")
     else
         print("Base part not found! Change BASE_PART_NAME.")
         button.Text = "Base not found!"
         wait(1)
-        button.Text = "INSTANT TELEPORT"
+        button.Text = "⚡ INSTANT STEAL & TELEPORT ⚡"
     end
 end
 
+-- Main button action
 button.MouseButton1Click:Connect(function()
-    if isHoldingBrainrot() then
+    if hasAnyBrainrot() then
         teleportToBase()
         button.Text = "Teleported!"
         wait(0.5)
-        button.Text = "INSTANT TELEPORT"
+        button.Text = "⚡ INSTANT STEAL & TELEPORT ⚡"
     else
         button.Text = "Hold Brainrot!"
         wait(0.7)
-        button.Text = "INSTANT TELEPORT"
+        button.Text = "⚡ INSTANT STEAL & TELEPORT ⚡"
     end
 end)
 
-game.StarterGui:SetCore("SendNotification", {Title = "Kailos Teleport", Text = "Loaded! Click INSTANT TELEPORT when holding brainrot.", Duration = 6})
+game.StarterGui:SetCore("SendNotification", {
+    Title = "Kailos Ultimate Brainrot",
+    Text = "Loaded! Drag the ⚡ INSTANT STEAL & TELEPORT ⚡ button and use when holding any brainrot.",
+    Duration = 8
+})
