@@ -1,7 +1,8 @@
 print("Kailos Ultimate Insta Steal/Teleport loaded!")
 
--- CONFIG: Change this to the name of the part in front of your base/collect zone!
-local BASE_PART_NAME = "CollectZone" -- <--- Change this to match your game's collect zone part name!
+-- CONFIG: Change these if needed for your game's base detection!
+local BASE_DETECT_KEYWORD = "Your Base"  -- Keyword to search for your base ("Your Base" or your username)
+local BASE_PART_NAME = "CollectZone"     -- The part in your base to teleport to (e.g., "CollectZone", "Front", etc.)
 
 local Players = game:GetService("Players")
 local player = Players.LocalPlayer
@@ -15,14 +16,13 @@ if not ScreenGui.Parent then
     ScreenGui.Parent = player:WaitForChild("PlayerGui")
 end
 
--- Button design
 local button = Instance.new("TextButton")
 button.Name = "InstaStealTeleportButton"
-button.Size = UDim2.new(0, 220, 0, 54)
-button.Position = UDim2.new(0.05, 0, 0.85, 0)
+button.Size = UDim2.new(0, 240, 0, 60)
+button.Position = UDim2.new(0.06, 0, 0.85, 0)
 button.BackgroundColor3 = Color3.fromRGB(0, 200, 255)
 button.TextColor3 = Color3.fromRGB(255,255,255)
-button.Text = "⚡ INSTANT STEAL & TELEPORT ⚡"
+button.Text = "⚡ INSTA STEAL & TELEPORT ⚡"
 button.Font = Enum.Font.FredokaOne
 button.TextScaled = true
 button.BorderSizePixel = 0
@@ -31,43 +31,70 @@ button.Visible = true
 button.AnchorPoint = Vector2.new(0, 0)
 button.Parent = ScreenGui
 
--- Rounded corners
 local corner = Instance.new("UICorner")
-corner.CornerRadius = UDim.new(0, 18)
+corner.CornerRadius = UDim.new(0, 20)
 corner.Parent = button
 
--- Drop shadow for style
 local shadow = Instance.new("ImageLabel")
 shadow.Name = "Shadow"
 shadow.Image = "rbxassetid://1316045217"
-shadow.Size = UDim2.new(1, 16, 1, 16)
-shadow.Position = UDim2.new(0, -8, 0, -8)
+shadow.Size = UDim2.new(1, 20, 1, 20)
+shadow.Position = UDim2.new(0, -10, 0, -10)
 shadow.BackgroundTransparency = 1
 shadow.ImageTransparency = 0.7
 shadow.Parent = button
 button.ZIndex = 2
 shadow.ZIndex = 1
 
--- Make button draggable
-local dragging, dragInput, dragStart, startPos
+-- Draggable Button
+local dragging, dragStart, startPos
 button.Active = true
-button.Draggable = true
+button.Draggable = false
 button.MouseButton1Down:Connect(function(input)
     dragging = true
-    dragStart = input.Position
+    dragStart = Vector2.new(input.Position.X, input.Position.Y)
     startPos = button.Position
-    input.Changed:Connect(function()
-        if input.UserInputState == Enum.UserInputState.End then
+    local conn
+    conn = game:GetService("UserInputService").InputChanged:Connect(function(inp)
+        if dragging and inp.UserInputType == Enum.UserInputType.MouseMovement then
+            local delta = Vector2.new(inp.Position.X, inp.Position.Y) - dragStart
+            button.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+        end
+        if inp.UserInputState == Enum.UserInputState.End then
             dragging = false
+            if conn then conn:Disconnect() end
         end
     end)
 end)
-button.MouseMoved:Connect(function(x, y)
-    if dragging then
-        local delta = Vector2.new(x, y) - dragStart
-        button.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+
+-- Find your base location as robustly as possible
+local function findBasePart()
+    -- Try by keyword (Your Base) first
+    for _,obj in pairs(workspace:GetDescendants()) do
+        if obj:IsA("Model") or obj:IsA("Folder") then
+            if tostring(obj.Name):lower():find(BASE_DETECT_KEYWORD:lower()) or tostring(obj.Name):lower():find(player.Name:lower()) then
+                local part = obj:FindFirstChild(BASE_PART_NAME)
+                if part and part:IsA("BasePart") then
+                    return part
+                end
+                -- If model/folder itself is a part
+                if obj:IsA("BasePart") then
+                    return obj
+                end
+            end
+        end
+        -- Direct part match
+        if obj:IsA("BasePart") and (tostring(obj.Name):lower():find(BASE_DETECT_KEYWORD:lower()) or tostring(obj.Name):lower():find(BASE_PART_NAME:lower())) then
+            return obj
+        end
     end
-end)
+    -- Fallback: try workspace
+    local fallback = workspace:FindFirstChild(BASE_PART_NAME)
+    if fallback and fallback:IsA("BasePart") then
+        return fallback
+    end
+    return nil
+end
 
 -- Check if holding ANY brainrot object
 local function hasAnyBrainrot()
@@ -86,38 +113,36 @@ local function hasAnyBrainrot()
     return false
 end
 
--- Teleport function
 local function teleportToBase()
     local char = player.Character
     if not char or not char:FindFirstChild("HumanoidRootPart") then return end
-    local base = workspace:FindFirstChild(BASE_PART_NAME)
-    if base and base.Position then
-        char.HumanoidRootPart.CFrame = CFrame.new(base.Position + Vector3.new(0, 4, 0))
+    local basePart = findBasePart()
+    if basePart and basePart.Position then
+        char.HumanoidRootPart.CFrame = CFrame.new(basePart.Position + Vector3.new(0, 5, 0)) -- teleport above
         print("Teleported to base front!")
     else
-        print("Base part not found! Change BASE_PART_NAME.")
+        print("Base not found! Change BASE_DETECT_KEYWORD or BASE_PART_NAME.")
         button.Text = "Base not found!"
         wait(1)
-        button.Text = "⚡ INSTANT STEAL & TELEPORT ⚡"
+        button.Text = "⚡ INSTA STEAL & TELEPORT ⚡"
     end
 end
 
--- Main button action
 button.MouseButton1Click:Connect(function()
     if hasAnyBrainrot() then
         teleportToBase()
         button.Text = "Teleported!"
         wait(0.5)
-        button.Text = "⚡ INSTANT STEAL & TELEPORT ⚡"
+        button.Text = "⚡ INSTA STEAL & TELEPORT ⚡"
     else
         button.Text = "Hold Brainrot!"
         wait(0.7)
-        button.Text = "⚡ INSTANT STEAL & TELEPORT ⚡"
+        button.Text = "⚡ INSTA STEAL & TELEPORT ⚡"
     end
 end)
 
 game.StarterGui:SetCore("SendNotification", {
     Title = "Kailos Ultimate Brainrot",
-    Text = "Loaded! Drag the ⚡ INSTANT STEAL & TELEPORT ⚡ button and use when holding any brainrot.",
+    Text = "Loaded! Drag the ⚡ INSTA STEAL & TELEPORT ⚡ button. Works with ANY brainrot. Teleports to your base.",
     Duration = 8
 })
