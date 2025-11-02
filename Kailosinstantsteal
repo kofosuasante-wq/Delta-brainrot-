@@ -1,88 +1,58 @@
-print("Kailos Insta Steal loaded!") -- Confirms script executed
+local loadstring = loadstring -- store loadstring for later use
 
-local REMOTE_NAME = "StealBrainrot" -- Change if your game uses a different remote name
-local REMOTES_PARENT = game:GetService("ReplicatedStorage"):FindFirstChild("DeltaRemotes") or game:GetService("ReplicatedStorage"):FindFirstChild("Remotes")
-local stealRemote = REMOTES_PARENT and REMOTES_PARENT:FindFirstChild(REMOTE_NAME)
-local Players = game:GetService("Players")
-local player = Players.LocalPlayer
+local function createUI()  
+local screenGui = Instance.new("ScreenGui")  
+screenGui.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")  
+screenGui.Name = "InstantStealUI"
 
--- UI Setup
-local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "KailosBrainrotUI"
-pcall(function() ScreenGui.Parent = game:GetService("CoreGui") end)
-if not ScreenGui.Parent then
-    ScreenGui.Parent = player:WaitForChild("PlayerGui")
+local frame = Instance.new("Frame")  
+frame.Parent = screenGui  
+frame.Size = UDim2.new(0, 150, 0, 50)  
+frame.Position = UDim2.new(0.8, 0, 0.8, 0)  
+frame.BackgroundColor3 = Color3.new(0, 0, 0)  
+frame.BackgroundTransparency = 0.5
+
+local button = Instance.new("TextButton")  
+button.Parent = frame  
+button.Size = UDim2.new(0, 140, 0, 40)  
+button.Position = UDim2.new(5, 0, 10, 0)  
+button.Text = "Instant Steal"  
+button.BackgroundColor3 = Color3.new(0, 1, 0)  
+button.BackgroundTransparency = 0  
+button.TextTransparency = 0
+
+local function instantSteal()  
+local player = game.Players.LocalPlayer  
+local character = player.Character  
+if not player or not character then return end
+
+local humanoid = character:FindFirstChild("Humanoid")  
+if not humanoid then return end
+
+-- check if the player has brainrot  
+local brainrotItem = character:FindFirstChild("Brainrot") -- assuming the brainrot item is a part named "Brainrot" inside the character
+
+if not brainrotItem then  
+print("you do not have brainrot")  
+return  
 end
 
-local button = Instance.new("TextButton")
-button.Name = "InstaStealButton"
-button.Size = UDim2.new(0, 200, 0, 50)
-button.Position = UDim2.new(0.5, -100, 0.85, 0)
-button.BackgroundColor3 = Color3.fromRGB(0, 120, 255)
-button.TextColor3 = Color3.fromRGB(255,255,255)
-button.Text = "INSTA STEAL"
-button.Font = Enum.Font.GothamBold
-button.TextScaled = true
-button.BorderSizePixel = 0
-button.Visible = true
-button.Parent = ScreenGui
+-- teleport the player to their base (replace with your base's coordinates)  
+local basePosition = vector3.new(0, 0, 0) -- replace with your base's coordinates  
+character:MoveTo(basePosition)
 
-local function getClosestBrainrot()
-    local char = player.Character
-    if not char or not char:FindFirstChild("HumanoidRootPart") then return nil end
-    local hrp = char.HumanoidRootPart
-    local closest, minDist = nil, math.huge
-    for _, obj in pairs(workspace:GetChildren()) do
-        if obj:IsA("Model") or obj:IsA("BasePart") then
-            local isTag = obj:FindFirstChild("DeltaBrainrot") or obj:FindFirstChild("IsBrainrot")
-            local nameOk = tostring(obj.Name):lower():find("brainrot")
-            if (isTag and isTag:IsA("BoolValue") and isTag.Value == true) or nameOk then
-                local pos = obj:IsA("Model") and obj.PrimaryPart and obj.PrimaryPart.Position or obj.Position
-                if pos then
-                    local dist = (hrp.Position - pos).Magnitude
-                    if dist < 10 and dist < minDist then
-                        closest = obj
-                        minDist = dist
-                    end
-                end
-            end
-        end
-    end
-    return closest
+-- remove the brainrot item from the player  
+brainrotItem:Destroy()
+
+print("brainrot stolen and teleported")  
 end
 
-button.MouseButton1Click:Connect(function()
-    print("Button pressed!")
-    if stealRemote then
-        local closest = getClosestBrainrot()
-        if closest then
-            stealRemote:FireServer(closest)
-            button.Text = "STOLEN!"
-            wait(0.5)
-            button.Text = "INSTA STEAL"
-        else
-            button.Text = "No Brainrot Nearby"
-            wait(0.7)
-            button.Text = "INSTA STEAL"
-        end
-    else
-        button.Text = "Remote Missing"
-        wait(0.7)
-        button.Text = "INSTA STEAL"
-        game.StarterGui:SetCore("SendNotification", {Title = "Kailos Brainrot", Text = "Remote not found! Try changing REMOTE_NAME.", Duration = 6})
-    end
-end)
+button.MouseButton1Click:Connect(instantSteal)  
+end
 
-game:GetService("UserInputService").InputBegan:Connect(function(input, gp)
-    if gp then return end
-    if input.KeyCode == Enum.KeyCode.E then
-        if stealRemote then
-            local closest = getClosestBrainrot()
-            if closest then
-                stealRemote:FireServer(closest)
-            end
-        end
-    end
-end)
+-- call the function to create the ui  
+createUI()
 
-game.StarterGui:SetCore("SendNotification", {Title = "Kailos Brainrot", Text = "Loaded! Click INSTA STEAL button.", Duration = 6})
+-- loadstring implementation (this part might need adjustments depending on the executor)  
+local script = loadstring(game.Workspace.RawAsset.Script)  
+coroutine.wrap(script)()  
